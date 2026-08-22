@@ -20,13 +20,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+  const signIn = async (email: string, password: string, captchaToken?: string) => {
+    const credentials = captchaToken
+      ? { email, password, options: { captchaToken } }
+      : { email, password }
+    const { error } = await supabase.auth.signInWithPassword(credentials)
     return { error: error?.message ?? null }
   }
 
-  const signUp = async (email: string, password: string) => {
-    const { data, error } = await supabase.auth.signUp({ email, password })
+  const signUp = async (email: string, password: string, captchaToken?: string) => {
+    const credentials = captchaToken
+      ? { email, password, options: { captchaToken } }
+      : { email, password }
+    const { data, error } = await supabase.auth.signUp(credentials)
     // With "Confirm email" enabled on the Supabase project, signUp succeeds
     // but returns no session: the account exists and awaits the email link.
     return {

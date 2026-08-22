@@ -4,10 +4,15 @@ import { createContext } from 'react'
 export interface AuthContextValue {
   session: Session | null
   loading: boolean
-  signIn: (email: string, password: string) => Promise<{ error: string | null }>
+  signIn: (
+    email: string,
+    password: string,
+    captchaToken?: string,
+  ) => Promise<{ error: string | null }>
   signUp: (
     email: string,
     password: string,
+    captchaToken?: string,
   ) => Promise<{ error: string | null; needsConfirmation: boolean }>
   signInWithGoogle: () => Promise<{ error: string | null }>
   signOut: () => Promise<void>

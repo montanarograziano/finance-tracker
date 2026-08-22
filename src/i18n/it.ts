@@ -27,6 +27,8 @@ export const translation = {
     invalidEmail: 'Email non valida',
     passwordTooShort: 'La password deve essere lunga almeno 8 caratteri',
     passwordMismatch: 'Le password non coincidono',
+    securityVerification: 'Verifica di sicurezza',
+    captchaRequired: 'Completa la verifica di sicurezza e riprova.',
     alreadyHaveAccount: 'Hai già un account?',
     noAccount: 'Non hai un account?',
     register: 'Registrati',

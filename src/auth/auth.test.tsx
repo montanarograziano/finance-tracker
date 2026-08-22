@@ -4,6 +4,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import { AuthProvider } from './AuthContext'
 import { LoginPage } from './LoginPage'
+import { useAuth } from './useAuth'
 import { ProtectedRoute } from './ProtectedRoute'
 
 vi.mock('../lib/supabase', () => ({
@@ -40,6 +41,15 @@ function renderApp(initialPath: string) {
   )
 }
 
+function CaptchaSignInProbe() {
+  const { signIn } = useAuth()
+  return (
+    <button onClick={() => void signIn('me@example.com', 'password123', 'captcha-token')}>
+      captcha sign in
+    </button>
+  )
+}
+
 describe('auth', () => {
   it('redirects unauthenticated users to the login page', async () => {
     renderApp('/')
@@ -54,6 +64,26 @@ describe('auth', () => {
     await user.type(screen.getByLabelText(/password/i), 'wrong')
     await user.click(screen.getByRole('button', { name: /accedi/i }))
     await waitFor(() => expect(screen.getByText('Invalid login credentials')).toBeInTheDocument())
+  })
+
+  it('forwards the CAPTCHA token to password sign-in', async () => {
+    const { supabase } = await import('../lib/supabase')
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <CaptchaSignInProbe />
+        </AuthProvider>
+      </MemoryRouter>,
+    )
+    await user.click(screen.getByRole('button', { name: 'captcha sign in' }))
+    await waitFor(() =>
+      expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
+        email: 'me@example.com',
+        password: 'password123',
+        options: { captchaToken: 'captcha-token' },
+      }),
+    )
   })
 
   it('starts the Google OAuth flow from the login page', async () => {

@@ -1,8 +1,10 @@
 import { Wallet } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { useState, type SubmitEvent } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { isCaptchaEnabled } from './captcha'
 import { GoogleButton } from './GoogleButton'
+import { Turnstile } from './Turnstile'
 import { useAuth } from './useAuth'
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -16,10 +18,12 @@ export function RegisterPage() {
   const [error, setError] = useState<string | null>(null)
   const [confirmationSent, setConfirmationSent] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [captchaReset, setCaptchaReset] = useState(0)
 
   if (session) return <Navigate to="/" replace />
 
-  const onSubmit = async (e: FormEvent) => {
+  const onSubmit = async (e: SubmitEvent<HTMLFormElement>) => {
     e.preventDefault()
     setError(null)
     if (!EMAIL_RE.test(email)) {
@@ -34,10 +38,15 @@ export function RegisterPage() {
       setError(t('auth.passwordMismatch'))
       return
     }
+    if (isCaptchaEnabled() && !captchaToken) {
+      setError(t('auth.captchaRequired'))
+      return
+    }
     setSubmitting(true)
-    const result = await signUp(email, password)
+    const result = await signUp(email, password, captchaToken ?? undefined)
     if (result.error) setError(result.error)
     else if (result.needsConfirmation) setConfirmationSent(true)
+    setCaptchaReset((value) => value + 1)
     setSubmitting(false)
   }
 
@@ -68,6 +77,7 @@ export function RegisterPage() {
             <input
               id="email"
               type="email"
+              autoComplete="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input"
@@ -80,6 +90,7 @@ export function RegisterPage() {
             <input
               id="password"
               type="password"
+              autoComplete="new-password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="input"
@@ -92,11 +103,17 @@ export function RegisterPage() {
             <input
               id="confirm"
               type="password"
+              autoComplete="new-password"
               value={confirm}
               onChange={(e) => setConfirm(e.target.value)}
               className="input"
             />
           </div>
+          <Turnstile
+            label={t('auth.securityVerification')}
+            onToken={setCaptchaToken}
+            resetKey={captchaReset}
+          />
           {error && (
             <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-500/10 dark:text-rose-400">
               {error}

@@ -75,6 +75,7 @@ Fill in the public project values from **Supabase Dashboard → Project Settings
 ```dotenv
 VITE_SUPABASE_URL=https://your-project-ref.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
+VITE_TURNSTILE_SITE_KEY=your-turnstile-site-key
 ```
 
 Apply the schema and start the app:
@@ -91,7 +92,7 @@ In the Supabase dashboard:
 
 1. Enable Email and, optionally, Google under **Authentication → Sign In / Providers**.
 2. Set the deployed site URL and allowed redirects under **Authentication → URL Configuration**. Add `http://localhost:5173` for local development.
-3. For an internet-facing deployment, enable email confirmation and CAPTCHA, then review auth rate limits and password requirements. For a private personal instance, disable public signup instead.
+3. For an internet-facing deployment, configure Turnstile CAPTCHA, review auth rate limits and password requirements, and decide whether email confirmation fits your audience. For a private personal instance, disable public signup instead.
 
 The committed `supabase/config.toml` configures local development; do not treat its auth defaults as production recommendations.
 
@@ -132,13 +133,13 @@ supabase/
 └── migrations/  # schema, constraints, RLS policies, and SQL functions
 ```
 
-The repository currently has 180+ tests, with the densest coverage around pure domain logic and security-sensitive export behavior.
+The repository currently has 180+ tests, with the densest coverage around pure domain logic and security-sensitive authentication and export behavior.
 
 ## Deploying
 
 `netlify.toml` builds and serves the SPA on Netlify. Vercel and Cloudflare Pages can serve the same `dist/` output.
 
-1. Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in the hosting provider.
+1. Set the three `VITE_*` values from `.env.example` in the hosting provider.
 2. Build with `npm run build` and publish `dist/`.
 3. Add the production URL to Supabase's redirect allowlist.
 4. Apply the production auth controls listed above.
