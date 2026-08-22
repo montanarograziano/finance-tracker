@@ -1,0 +1,124 @@
+@import 'tailwindcss';
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+
+  /* Brand palette (warm amber) */
+  --color-brand-50: #fdf8ef;
+  --color-brand-100: #faf0da;
+  --color-brand-200: #f5ddb0;
+  --color-brand-300: #efc87f;
+  --color-brand-400: #ecb45c;
+  --color-brand-500: #e8a33d;
+  --color-brand-600: #d18a26;
+  --color-brand-700: #a96e1c;
+  --color-brand-800: #865716;
+  --color-brand-900: #6d4712;
+  --color-brand-950: #3e2708;
+
+  /*
+   * Neutral surface scale (Discord/Spotify-style greys).
+   * Overrides Tailwind's blue-tinted slate so every existing slate-*
+   * utility in the app resolves to these neutral values.
+   */
+  --color-slate-50: #fafafa;
+  --color-slate-100: #f4f4f5;
+  --color-slate-200: #e4e4e7;
+  --color-slate-300: #d0d2d6;
+  --color-slate-400: #9aa0a8;
+  --color-slate-500: #6d7178;
+  --color-slate-600: #52555c;
+  --color-slate-700: #3f4147;
+  --color-slate-800: #2e3035;
+  --color-slate-900: #1e2023;
+  --color-slate-950: #131416;
+}
+
+@layer base {
+  :root {
+    /* Chart theming, flips with .dark */
+    --chart-grid: #e4e4e7;
+    --chart-axis: #9aa0a8;
+    --chart-line: #d18a26;
+    --chart-alt: #0284c7;
+    --chart-income: #10b981;
+    --chart-income-active: #059669;
+    --chart-expense: #f43f5e;
+    --chart-expense-active: #e11d48;
+    --tooltip-bg: #ffffff;
+    --tooltip-border: #e4e4e7;
+    --tooltip-text: #1e2023;
+  }
+
+  .dark {
+    --chart-grid: #2e3035;
+    --chart-axis: #8b8f96;
+    --chart-line: #ecb45c;
+    --chart-alt: #38bdf8;
+    --tooltip-bg: #1e2023;
+    --tooltip-border: #3f4147;
+    --tooltip-text: #f4f4f5;
+  }
+
+  body {
+    @apply bg-slate-50 text-slate-900 antialiased dark:bg-slate-950 dark:text-slate-100;
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Surface — defined as a utility so it composes with variants (e.g. md:card) */
+@utility card {
+  @apply rounded-2xl border border-slate-200/80 bg-white shadow-xs dark:border-slate-800 dark:bg-slate-900;
+}
+
+@layer components {
+  /* Buttons */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-sm font-medium text-brand-950 shadow-xs transition-colors hover:bg-brand-400 active:bg-brand-600 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500;
+  }
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-xs transition-colors hover:bg-slate-50 disabled:pointer-events-none disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-500 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300 dark:hover:bg-slate-800;
+  }
+
+  /* Forms */
+  .form-label {
+    @apply mb-1.5 block text-sm font-medium text-slate-600 dark:text-slate-400;
+  }
+  .input {
+    @apply w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-xs transition-colors placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/25 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:border-brand-400;
+  }
+
+  /* Segmented control */
+  .seg {
+    @apply flex w-fit rounded-xl border border-slate-200 bg-slate-100 p-1 dark:border-slate-800 dark:bg-slate-900;
+  }
+  .seg-btn {
+    @apply rounded-lg px-3.5 py-1.5 text-sm font-medium text-slate-500 transition-colors hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200;
+  }
+  .seg-btn-active {
+    @apply bg-white text-slate-900 shadow-xs hover:text-slate-900 dark:bg-slate-700 dark:text-white dark:hover:text-white;
+  }
+
+  /* KPI blocks */
+  .kpi-label {
+    @apply text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400;
+  }
+  .kpi-value {
+    @apply mt-1 text-2xl font-semibold tracking-tight;
+  }
+
+  /* Semantic amounts */
+  .text-pos {
+    @apply text-emerald-600 dark:text-emerald-400;
+  }
+  .text-neg {
+    @apply text-rose-600 dark:text-rose-400;
+  }
+
+  /* Privacy mode: censor money amounts for screenshots/screen-sharing */
+  .privacy-mode .money-blur {
+    filter: blur(6px);
+    user-select: none;
+  }
+}
