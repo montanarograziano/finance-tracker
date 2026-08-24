@@ -56,6 +56,8 @@ Domain calculations live in pure TypeScript modules. Server-derived balances and
 - Private query caches are recreated when the authenticated user changes, preventing data from one session appearing in another.
 - Spreadsheet exports neutralize formula injection. GitHub Pages serves no custom response headers, so RLS on Postgres, not HTTP headers, is the authorization boundary; `index.html` sets a `frame-ancestors 'none'` CSP `<meta>` tag, the one clickjacking mitigation a static host allows.
 - The app includes no analytics or remote font request.
+- **The hosted instance at <https://montanarograziano.github.io/finance-tracker/> points at the owner's own Supabase project, with open signups.** Anyone who signs up there stores their financial records in that same shared project, alongside the owner's. RLS (above) is the only isolation between them — there is no separate database per user. If you want your data in a project only you control, deploy your own instance instead of using the hosted one.
+- The hosted project runs on Supabase's free tier and has a database-level capacity guard (`supabase/migrations/20260825000000_capacity_guard.sql`) that refuses new signups once the project nears its user or storage cap, or when the owner manually disables signups. It protects availability, not cost — see that migration's comments and [SECURITY.md](SECURITY.md) for what it does and does not cover.
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 
