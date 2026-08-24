@@ -30,6 +30,3 @@ dist-ssr
 # Local data & browser artifacts
 /data/
 /.playwright-mcp/
-
-# Local Netlify folder
-.netlify
