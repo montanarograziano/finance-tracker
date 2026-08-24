@@ -86,6 +86,14 @@ export function LoginPage() {
             onToken={setCaptchaToken}
             resetKey={captchaReset}
           />
+          <p className="text-right text-sm">
+            <Link
+              to="/forgot-password"
+              className="font-medium text-brand-600 hover:underline dark:text-brand-400"
+            >
+              {t('auth.forgotPassword')}
+            </Link>
+          </p>
           {error && (
             <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-500/10 dark:text-rose-400">
               {error}

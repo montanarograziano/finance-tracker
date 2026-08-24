@@ -3,9 +3,11 @@ import { lazy, Suspense, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { HashRouter, Route, Routes } from 'react-router-dom' // GitHub Pages has no SPA rewrite, so hash routing avoids 404s on deep-link refresh
 import { AuthProvider } from './auth/AuthContext'
+import { ForgotPasswordPage } from './auth/ForgotPasswordPage'
 import { LoginPage } from './auth/LoginPage'
 import { ProtectedRoute } from './auth/ProtectedRoute'
 import { RegisterPage } from './auth/RegisterPage'
+import { UpdatePasswordPage } from './auth/UpdatePasswordPage'
 import { Layout } from './components/Layout'
 import { useAuth } from './auth/useAuth'
 
@@ -46,6 +48,8 @@ function QueryRoutes() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/update-password" element={<UpdatePasswordPage />} />
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
               <Route index element={<DashboardPage />} />

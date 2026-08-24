@@ -15,6 +15,8 @@ export interface AuthContextValue {
     captchaToken?: string,
   ) => Promise<{ error: string | null; needsConfirmation: boolean }>
   signInWithGoogle: () => Promise<{ error: string | null }>
+  resetPassword: (email: string, captchaToken?: string) => Promise<{ error: string | null }>
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 
