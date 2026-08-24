@@ -12,12 +12,25 @@
         }
       })()
     </script>
+    <!-- Clickjacking defence, JS instead of a header. GitHub Pages cannot set
+         response headers at all, so netlify.toml's X-Frame-Options: DENY is
+         simply gone, and a <meta http-equiv="Content-Security-Policy"
+         content="frame-ancestors ..."> is NOT a substitute: the CSP spec lists
+         frame-ancestors as one of the directives browsers must ignore when it
+         arrives via <meta> (only a real response header counts), and Chrome
+         logs exactly that to the console. This framebuster is what a static
+         host can actually enforce. Its known gap: an attacker who frames the
+         page inside a <iframe sandbox> WITHOUT allow-top-navigation blocks the
+         assignment below, so this is weaker than the header it replaces --
+         accepted deliberately, because Postgres RLS, not frame policy, is this
+         app's authorization boundary. Runs before the app module so a framed
+         page never renders authenticated content. -->
+    <script>
+      if (window.top !== window.self) {
+        window.top.location = window.self.location
+      }
+    </script>
     <meta charset="UTF-8" />
-    <!-- GitHub Pages can't set response headers, so only what a <meta> tag
-         can express survives from netlify.toml's [[headers]] block. The
-         X-Frame-Options/Permissions-Policy/Referrer-Policy/X-Content-Type-Options
-         headers are gone; Postgres RLS remains the real authorization boundary. -->
-    <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'none'" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta
