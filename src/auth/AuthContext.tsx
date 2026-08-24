@@ -46,7 +46,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // after Supabase redirects back to the app.
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: window.location.origin },
+      // GitHub Pages serves this from a /finance-tracker/ subpath, so the
+      // redirect must include BASE_URL or it lands one level too high.
+      options: { redirectTo: window.location.origin + import.meta.env.BASE_URL },
     })
     return { error: error?.message ?? null }
   }

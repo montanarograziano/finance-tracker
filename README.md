@@ -4,7 +4,7 @@
 
 **A deploy-it-yourself personal finance app for expenses, income, recurring transactions, and net worth.**
 
-[![CI](https://github.com/montanarograziano/expenses/actions/workflows/ci.yml/badge.svg)](https://github.com/montanarograziano/expenses/actions/workflows/ci.yml)
+[![CI](https://github.com/montanarograziano/finance-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/montanarograziano/finance-tracker/actions/workflows/ci.yml)
 ![React](https://img.shields.io/badge/React_19-20232A?logo=react&logoColor=61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_4-06B6D4?logo=tailwindcss&logoColor=white)
@@ -54,7 +54,7 @@ Domain calculations live in pure TypeScript modules. Server-derived balances and
 - The `VITE_SUPABASE_ANON_KEY` is included in the browser bundle by design. Never use a Supabase service-role key in a `VITE_*` variable.
 - Every financial table has owner-scoped RLS. Composite foreign keys also prevent a record from referencing another user's account, category, or recurring rule.
 - Private query caches are recreated when the authenticated user changes, preventing data from one session appearing in another.
-- Spreadsheet exports neutralize formula injection, and Netlify responses include clickjacking and basic browser-hardening headers.
+- Spreadsheet exports neutralize formula injection. GitHub Pages serves no custom response headers, so RLS on Postgres, not HTTP headers, is the authorization boundary; `index.html` sets a `frame-ancestors 'none'` CSP `<meta>` tag, the one clickjacking mitigation a static host allows.
 - The app includes no analytics or remote font request.
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting.
@@ -64,8 +64,8 @@ See [SECURITY.md](SECURITY.md) for vulnerability reporting.
 **Prerequisites:** Node 22+, a [Supabase](https://supabase.com) account, and the [Supabase CLI](https://supabase.com/docs/guides/cli).
 
 ```bash
-git clone https://github.com/montanarograziano/expenses.git
-cd expenses
+git clone https://github.com/montanarograziano/finance-tracker.git
+cd finance-tracker
 npm ci
 cp .env.example .env.local
 ```
@@ -137,11 +137,13 @@ The repository currently has 180+ tests, with the densest coverage around pure d
 
 ## Deploying
 
-`netlify.toml` builds and serves the SPA on Netlify. Vercel and Cloudflare Pages can serve the same `dist/` output.
+`.github/workflows/pages.yml` builds and deploys the SPA to GitHub Pages on every push to `main`, GitHub Pages is this repo's only deployment. `actions/configure-pages` supplies the base path (`/finance-tracker/` for this repo) and the workflow passes it to `vite build --base`, so the built assets and routes resolve correctly under that subpath. The app uses `HashRouter` (not `BrowserRouter`) because Pages has no SPA catch-all rewrite: hash routes (`#/accounts`, `#/categories`, ...) never hit the server on refresh or direct navigation, so no 404 is possible.
 
-1. Set the three `VITE_*` values from `.env.example` in the hosting provider.
-2. Build with `npm run build` and publish `dist/`.
-3. Add the production URL to Supabase's redirect allowlist.
+Live at <https://montanarograziano.github.io/finance-tracker/>.
+
+1. Set the three `VITE_*` values from `.env.example` as repository variables/secrets consumed at build time (Pages has no runtime env, only what's baked into the bundle at build).
+2. Add `https://montanarograziano.github.io/finance-tracker/` to Supabase's **Authentication → URL Configuration** Site URL and Redirect URLs allowlist, alongside `http://localhost:5173`.
+3. Add `montanarograziano.github.io` to Cloudflare Turnstile's allowed domains for the site key in use.
 4. Apply the production auth controls listed above.
 
 ## Contributing

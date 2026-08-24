@@ -1,7 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import { HashRouter, Route, Routes } from 'react-router-dom' // GitHub Pages has no SPA rewrite, so hash routing avoids 404s on deep-link refresh
 import { AuthProvider } from './auth/AuthContext'
 import { LoginPage } from './auth/LoginPage'
 import { ProtectedRoute } from './auth/ProtectedRoute'
@@ -77,10 +77,10 @@ export default function App() {
   }, [t])
 
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AuthProvider>
         <SessionRoutes />
       </AuthProvider>
-    </BrowserRouter>
+    </HashRouter>
   )
 }

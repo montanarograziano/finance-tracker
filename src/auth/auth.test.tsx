@@ -94,7 +94,7 @@ describe('auth', () => {
     await waitFor(() =>
       expect(supabase.auth.signInWithOAuth).toHaveBeenCalledWith({
         provider: 'google',
-        options: { redirectTo: window.location.origin },
+        options: { redirectTo: window.location.origin + import.meta.env.BASE_URL },
       }),
     )
   })

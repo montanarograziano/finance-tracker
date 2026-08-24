@@ -13,6 +13,11 @@
       })()
     </script>
     <meta charset="UTF-8" />
+    <!-- GitHub Pages can't set response headers, so only what a <meta> tag
+         can express survives from netlify.toml's [[headers]] block. The
+         X-Frame-Options/Permissions-Policy/Referrer-Policy/X-Content-Type-Options
+         headers are gone; Postgres RLS remains the real authorization boundary. -->
+    <meta http-equiv="Content-Security-Policy" content="frame-ancestors 'none'" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta

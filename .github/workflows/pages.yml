@@ -1,0 +1,73 @@
+# Deploys the Vite/React SPA to GitHub Pages, this repo's ONLY deployment
+# (Netlify has been removed, see netlify.toml's deletion).
+#
+# `actions/configure-pages` supplies `base_path` (e.g. "/finance-tracker",
+# or "" for a user site / a custom domain) rather than a hardcoded string:
+# Vite's `--base` has to match wherever Pages actually serves this site from,
+# and hardcoding it would silently break if a custom domain is attached
+# (base_path becomes "") or the repo is renamed again.
+#
+# Same conventions as .github/workflows/ci.yml: third-party actions pinned to
+# a commit SHA (not a mutable tag) and `persist-credentials: false` on
+# checkout. Kept as a separate workflow file from ci.yml (rather than a job
+# in it) because it needs different `permissions` (`pages: write`,
+# `id-token: write`) and a different `concurrency` policy (never cancel an
+# in-flight deploy) than the read-only, cancel-on-superseding-push CI checks.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Never cancel an in-flight Pages deploy: an aborted `deploy-pages` step can
+# leave the live site mid-swap. A newer push still runs after this one
+# finishes; it just doesn't preempt it (unlike ci.yml's group, which does).
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build static site
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: npm
+      - id: pages
+        uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
+      - run: npm ci
+      # `${PAGES_BASE_PATH}` via `env:`, not spliced straight into the `run:`
+      # line as `${{ steps.pages.outputs.base_path }}`: passing every Actions
+      # expression through an env var before a shell ever sees it keeps that
+      # safe structurally instead of by inspection.
+      - run: npm run build -- --base="${PAGES_BASE_PATH}/"
+        env:
+          PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy to Pages
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
