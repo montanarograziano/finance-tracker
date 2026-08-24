@@ -31,8 +31,17 @@ export function ForgotPasswordPage() {
     // is registered: resetPasswordForEmail succeeds either way by design, and
     // branching on it here would turn this form into an account-enumeration
     // oracle. Only a genuine request error (e.g. captcha failure) is surfaced.
-    if (result.error) setError(result.error)
-    else setSent(true)
+    //
+    // The raw message is deliberately NOT rendered. GoTrue answers a failed
+    // mail send with a 500 whose body is literally `{}`, which supabase-js
+    // hands over as the error message, so the user was shown "{}" -- observed
+    // in production, not hypothetical. Backend internals are not actionable
+    // for the person staring at the form, so they get one translated sentence
+    // and the real message goes to the console for whoever is debugging.
+    if (result.error) {
+      console.error('[reset-password]', result.error)
+      setError(t('auth.resetRequestFailed'))
+    } else setSent(true)
     setCaptchaReset((value) => value + 1)
     setSubmitting(false)
   }

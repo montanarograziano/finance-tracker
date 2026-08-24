@@ -45,6 +45,7 @@ export const translation = {
     sendingResetLink: 'Invio in corso…',
     resetLinkSent:
       'Se esiste un account per questo indirizzo, riceverai un link di reset. Controlla la tua casella email.',
+    resetRequestFailed: 'Non è stato possibile inviare l’email di reset. Riprova più tardi.',
     backToSignIn: 'Torna al login',
     updatePasswordTitle: 'Scegli una nuova password',
     newPassword: 'Nuova password',
