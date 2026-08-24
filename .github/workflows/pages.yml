@@ -51,9 +51,21 @@ jobs:
       # line as `${{ steps.pages.outputs.base_path }}`: passing every Actions
       # expression through an env var before a shell ever sees it keeps that
       # safe structurally instead of by inspection.
+      # Repository *variables*, not secrets, and deliberately so: every
+      # VITE_* value here is compiled into the JS bundle this job uploads and
+      # is therefore readable by anyone who opens the deployed site. The
+      # Supabase anon key is a `role=anon` JWT that is public by design --
+      # authorization is Postgres row-level security, not this key's secrecy
+      # (see README's security model). Storing them as secrets would only add
+      # log masking while implying a confidentiality this build cannot
+      # provide. The service-role key is the one that must never appear in
+      # any VITE_* variable, secret, or otherwise.
       - run: npm run build -- --base="${PAGES_BASE_PATH}/"
         env:
           PAGES_BASE_PATH: ${{ steps.pages.outputs.base_path }}
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ vars.VITE_SUPABASE_ANON_KEY }}
+          VITE_TURNSTILE_SITE_KEY: ${{ vars.VITE_TURNSTILE_SITE_KEY }}
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
           path: dist

@@ -182,6 +182,16 @@ $$;
 -- in depth, matching Supabase's linter guidance for SECURITY DEFINER functions.
 revoke execute on function public.check_signup_capacity() from public;
 
+-- Belt and braces on that revoke. PostgreSQL checks EXECUTE on a trigger
+-- function when the trigger is CREATED, not each time it fires, so the revoke
+-- above should be harmless -- but GoTrue inserts into auth.users as
+-- `supabase_auth_admin`, and a signup path that fails closed because of a
+-- privilege subtlety would break every registration on the site. The explicit
+-- grant costs nothing and removes the doubt: supabase_auth_admin is the only
+-- role that legitimately triggers this function, and it can already insert
+-- into auth.users anyway, so granting it EXECUTE widens nothing.
+grant execute on function public.check_signup_capacity() to supabase_auth_admin;
+
 create trigger enforce_signup_capacity
   before insert on auth.users
   for each row execute function public.check_signup_capacity();
