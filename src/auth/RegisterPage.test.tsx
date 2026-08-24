@@ -83,7 +83,11 @@ describe('RegisterPage', () => {
     await user.type(screen.getByLabelText(/conferma password/i), 'password123')
     await user.click(screen.getByRole('button', { name: /crea account/i }))
     await waitFor(() => expect(mockSignUp).toHaveBeenCalledOnce())
-    expect(mockSignUp).toHaveBeenCalledWith({ email: 'user@example.com', password: 'password123' })
+    expect(mockSignUp).toHaveBeenCalledWith({
+      email: 'user@example.com',
+      password: 'password123',
+      options: { emailRedirectTo: window.location.origin + import.meta.env.BASE_URL },
+    })
   })
 
   it('tells the user to check their inbox when email confirmation is required', async () => {

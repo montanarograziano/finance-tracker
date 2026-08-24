@@ -35,10 +35,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   const signUp = async (email: string, password: string, captchaToken?: string) => {
-    const credentials = captchaToken
-      ? { email, password, options: { captchaToken } }
-      : { email, password }
-    const { data, error } = await supabase.auth.signUp(credentials)
+    // Do not fall back to Supabase's project-wide Site URL: this app is a
+    // GitHub Pages project site, so that default lands confirmation links on
+    // the unrelated portfolio root. The explicit base path is load-bearing in
+    // exactly the same way as OAuth and password-recovery redirects below.
+    const options = {
+      emailRedirectTo: window.location.origin + import.meta.env.BASE_URL,
+      ...(captchaToken ? { captchaToken } : {}),
+    }
+    const { data, error } = await supabase.auth.signUp({ email, password, options })
     // With "Confirm email" enabled on the Supabase project, signUp succeeds
     // but returns no session: the account exists and awaits the email link.
     return {
@@ -84,6 +89,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null }
   }
 
+  const deleteAccount = async () => {
+    const { error } = await supabase.rpc('delete_own_account')
+    if (error) return { error: error.message }
+
+    // Deleting auth.users invalidates the server-side user before the browser's
+    // JWT expires. A local sign-out clears that now-stale token and emits the
+    // SIGNED_OUT event without making account deletion depend on a second
+    // server request. SessionRoutes then replaces its QueryClient, discarding
+    // every cached financial query automatically.
+    await supabase.auth.signOut({ scope: 'local' })
+    return { error: null }
+  }
+
   const signOut = async () => {
     await supabase.auth.signOut()
   }
@@ -98,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signInWithGoogle,
         resetPassword,
         updatePassword,
+        deleteAccount,
         signOut,
       }}
     >

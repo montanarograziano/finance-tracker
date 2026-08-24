@@ -337,6 +337,16 @@ export const translation = {
     languageSection: 'Lingua',
     languageIt: 'Italiano',
     languageEn: 'English',
+    dangerSection: 'Zona pericolosa',
+    deleteAccount: 'Elimina account',
+    deleteAccountDescription:
+      'Elimina definitivamente il tuo account e tutti i conti, categorie, transazioni, investimenti e regole ricorrenti associati.',
+    deleteAccountWarning:
+      'Questa operazione non può essere annullata. Esporta prima i dati dell’account se vuoi conservarne una copia.',
+    deleteAccountConfirmation: 'Digita {{email}} per confermare.',
+    confirmDeleteAccount: 'Elimina definitivamente l’account',
+    deletingAccount: 'Eliminazione…',
+    deleteAccountError: 'Impossibile eliminare l’account. Riprova più tardi.',
   },
   periodFilter: {
     currentMonth: 'Mese',

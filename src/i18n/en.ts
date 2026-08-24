@@ -335,6 +335,16 @@ export const translation = {
     languageSection: 'Language',
     languageIt: 'Italiano',
     languageEn: 'English',
+    dangerSection: 'Danger zone',
+    deleteAccount: 'Delete account',
+    deleteAccountDescription:
+      'Permanently delete your account and all accounts, categories, transactions, investments, and recurring rules stored with it.',
+    deleteAccountWarning:
+      'This cannot be undone. Export your account data first if you want to keep a copy.',
+    deleteAccountConfirmation: 'Type {{email}} to confirm.',
+    confirmDeleteAccount: 'Permanently delete account',
+    deletingAccount: 'Deleting…',
+    deleteAccountError: 'Could not delete your account. Please try again later.',
   },
   periodFilter: {
     currentMonth: 'Month',

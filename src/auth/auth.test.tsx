@@ -9,6 +9,7 @@ import { ProtectedRoute } from './ProtectedRoute'
 
 vi.mock('../lib/supabase', () => ({
   supabase: {
+    rpc: vi.fn().mockResolvedValue({ error: null }),
     auth: {
       getSession: vi.fn().mockResolvedValue({ data: { session: null } }),
       onAuthStateChange: vi
@@ -50,6 +51,20 @@ function CaptchaSignInProbe() {
   )
 }
 
+function SignUpProbe() {
+  const { signUp } = useAuth()
+  return (
+    <button onClick={() => void signUp('new@example.com', 'password123', 'captcha-token')}>
+      sign up
+    </button>
+  )
+}
+
+function DeleteAccountProbe() {
+  const { deleteAccount } = useAuth()
+  return <button onClick={() => void deleteAccount()}>delete own account</button>
+}
+
 describe('auth', () => {
   it('redirects unauthenticated users to the login page', async () => {
     renderApp('/')
@@ -86,6 +101,31 @@ describe('auth', () => {
     )
   })
 
+  it('sends signup confirmation back to the GitHub Pages base path', async () => {
+    const { supabase } = await import('../lib/supabase')
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <SignUpProbe />
+        </AuthProvider>
+      </MemoryRouter>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'sign up' }))
+
+    await waitFor(() =>
+      expect(supabase.auth.signUp).toHaveBeenCalledWith({
+        email: 'new@example.com',
+        password: 'password123',
+        options: {
+          emailRedirectTo: window.location.origin + import.meta.env.BASE_URL,
+          captchaToken: 'captcha-token',
+        },
+      }),
+    )
+  })
+
   it('starts the Google OAuth flow from the login page', async () => {
     const { supabase } = await import('../lib/supabase')
     renderApp('/login')
@@ -97,5 +137,22 @@ describe('auth', () => {
         options: { redirectTo: window.location.origin + import.meta.env.BASE_URL },
       }),
     )
+  })
+
+  it('deletes only through the RPC then clears the local session', async () => {
+    const { supabase } = await import('../lib/supabase')
+    const user = userEvent.setup()
+    render(
+      <MemoryRouter>
+        <AuthProvider>
+          <DeleteAccountProbe />
+        </AuthProvider>
+      </MemoryRouter>,
+    )
+
+    await user.click(screen.getByRole('button', { name: 'delete own account' }))
+
+    await waitFor(() => expect(supabase.rpc).toHaveBeenCalledWith('delete_own_account'))
+    expect(supabase.auth.signOut).toHaveBeenCalledWith({ scope: 'local' })
   })
 })
