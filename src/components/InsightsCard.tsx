@@ -57,11 +57,28 @@ function DeltaBadge({
   )
 }
 
-export function InsightsCard() {
+/**
+ * Month selection is optional-controlled: when `month`/`onMonthChange` are
+ * passed (Dashboard), the parent owns it so the charts below can follow the
+ * same month; otherwise the card manages its own state.
+ */
+export function InsightsCard({
+  month,
+  onMonthChange,
+}: {
+  month?: string | null
+  onMonthChange?: (month: string) => void
+} = {}) {
   const { t, i18n } = useTranslation()
   const { data: transactions = [], isLoading } = useTransactions()
   const { data: categories = [] } = useCategories()
-  const [pickedMonth, setPickedMonth] = useState<string | null>(null)
+  const [internalMonth, setInternalMonth] = useState<string | null>(null)
+  const controlled = month !== undefined
+  const pickedMonth = controlled ? month : internalMonth
+  const changeMonth = (m: string) => {
+    onMonthChange?.(m)
+    if (!controlled) setInternalMonth(m)
+  }
   const [showAllNew, setShowAllNew] = useState(false)
   const [showAllVanished, setShowAllVanished] = useState(false)
   const [showAllStreaks, setShowAllStreaks] = useState(false)
@@ -118,7 +135,7 @@ export function InsightsCard() {
           <select
             aria-label={t('insights.monthLabel')}
             value={anchorMonth}
-            onChange={(e) => setPickedMonth(e.target.value)}
+            onChange={(e) => changeMonth(e.target.value)}
             className="rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-2 py-1 text-sm max-sm:min-h-11"
           >
             {[...months].reverse().map((m) => (
