@@ -84,6 +84,14 @@ describe('DashboardPage', () => {
     expect(screen.queryByText('Media mensile')).not.toBeInTheDocument()
   })
 
+  it('scopes the expenses-by-category pie to the shared Insights month', () => {
+    render(<DashboardPage />)
+    // Fixture has one expense in 2026-07, so the shared month defaults to it
+    // and the pie header is labelled with that month (not the current month).
+    const heading = screen.getByRole('heading', { name: /spese per categoria/i })
+    expect(heading.textContent).toMatch(/luglio 2026/i)
+  })
+
   it('renders the three KPIs with privacy-blurred values', () => {
     render(<DashboardPage />)
     expect(screen.getByText(/patrimonio netto/i)).toBeInTheDocument()

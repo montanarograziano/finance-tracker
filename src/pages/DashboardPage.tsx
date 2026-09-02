@@ -28,6 +28,7 @@ import {
 } from '../data/hooks'
 import { expensesByCategory, incomeVsExpenseByMonth, monthlyAverages } from '../domain/aggregations'
 import { lastDayOfMonth, rangeForPreset } from '../domain/filters'
+import { monthsWithExpenses } from '../domain/insights'
 import {
   CHART,
   chartTick,
@@ -54,7 +55,11 @@ export function DashboardPage() {
     custom: rangeForPreset('current-month', today),
   })
   const [accountId, setAccountId] = useState('')
-  const [selectedMonth, setSelectedMonth] = useState<string | null>(null)
+  // Month shared by the Insights picker and the charts below. `pickedMonth`
+  // null = fall back to the latest month with expenses. `detailOpen` toggles
+  // the drill-in panel without clearing the month the pie/bar follow.
+  const [pickedMonth, setPickedMonth] = useState<string | null>(null)
+  const [detailOpen, setDetailOpen] = useState(false)
   const [sortCol, setSortCol] = useState<SortCol>('amount')
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc')
   const detailRef = useRef<HTMLDivElement>(null)
@@ -77,20 +82,26 @@ export function DashboardPage() {
     accountId: accountId || undefined,
   })
 
-  const selectedRange = selectedMonth
-    ? { from: `${selectedMonth}-01`, to: lastDayOfMonth(selectedMonth) }
+  // Full history (unfiltered) gives the month list shared with the Insights
+  // picker. Same query key as InsightsCard, so React Query dedupes the fetch.
+  const { data: allTx = [] } = useTransactions()
+  const expenseMonths = monthsWithExpenses(allTx)
+  const dashMonth = pickedMonth ?? expenseMonths[expenseMonths.length - 1] ?? null
+
+  const selectedRange = dashMonth
+    ? { from: `${dashMonth}-01`, to: lastDayOfMonth(dashMonth) }
     : null
 
   const { data: monthTransactions = [], isLoading: isLoadingMonth } = useTransactions(
     selectedRange ?? {},
-    { enabled: !!selectedMonth },
+    { enabled: !!dashMonth },
   )
 
   useEffect(() => {
-    if (selectedMonth && detailRef.current) {
-      detailRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+    if (detailOpen && detailRef.current) {
+      detailRef.current.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' })
     }
-  }, [selectedMonth])
+  }, [detailOpen, dashMonth])
 
   const worth = sumAmounts(accountBalances.map((a) => a.balance))
   const categoryName = new Map(categories.map((c) => [c.id, c.name]))
@@ -105,8 +116,11 @@ export function DashboardPage() {
   const monthlyData = incomeVsExpenseByMonth(transactions)
   const totalExpenses = sumAmounts(pieData.map((d) => d.value))
   const totalIncome = sumAmounts(monthlyData.map((m) => m.income))
+  // The bar spans the last 12 months of full history (not the period filter),
+  // so the picked month always has a bar for its highlight to land on.
+  const barData = incomeVsExpenseByMonth(allTx).slice(-12)
 
-  const monthPieData = selectedMonth
+  const monthPieData = dashMonth
     ? expensesByCategory(monthTransactions).map((entry) => ({
         name: categoryName.get(entry.categoryId) ?? t('common.uncategorized'),
         value: entry.total,
@@ -133,7 +147,12 @@ export function DashboardPage() {
 
   const handleBarClick = (data: { activeLabel?: string | number }) => {
     const month = typeof data?.activeLabel === 'string' ? data.activeLabel : null
-    if (month) setSelectedMonth((prev) => (prev === month ? null : month))
+    if (!month) return
+    if (month === dashMonth && detailOpen) setDetailOpen(false)
+    else {
+      setPickedMonth(month)
+      setDetailOpen(true)
+    }
   }
 
   if (isLoading) return <p className="text-slate-500 dark:text-slate-400">{t('common.loading')}</p>
@@ -227,7 +246,13 @@ export function DashboardPage() {
 
       <MonthlyAveragesRow averages={monthlyAverages(transactions, range, today)} />
 
-      <InsightsCard />
+      <InsightsCard
+        month={dashMonth}
+        onMonthChange={(m) => {
+          setPickedMonth(m)
+          setDetailOpen(true)
+        }}
+      />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <section className="card p-5">
@@ -263,37 +288,50 @@ export function DashboardPage() {
         </section>
 
         <section className="card p-5">
-          <h2 className="mb-3 font-semibold tracking-tight">{t('dashboard.expensesByCategory')}</h2>
-          <div className="money-blur">
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  dataKey="value"
-                  nameKey="name"
-                  label={pieLabel}
-                  innerRadius="55%"
-                  paddingAngle={2}
-                  stroke="none"
-                >
-                  {pieData.map((entry) => (
-                    <Cell key={entry.name} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip
-                  formatter={(v) => {
-                    const value = Number(v)
-                    return totalExpenses > 0
-                      ? `${formatEur(value)} · ${formatPct(value / totalExpenses)}`
-                      : formatEur(value)
-                  }}
-                  contentStyle={tooltipContentStyle}
-                  labelStyle={tooltipLabelStyle}
-                />
-                <Legend wrapperStyle={legendStyle} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          <h2 className="mb-3 font-semibold tracking-tight">
+            {t('dashboard.expensesByCategory')}
+            {dashMonth && (
+              <span className="ml-2 text-xs font-normal text-slate-400 dark:text-slate-500">
+                {formatMonth(dashMonth)}
+              </span>
+            )}
+          </h2>
+          {monthPieData.length === 0 ? (
+            <p className="py-16 text-center text-sm text-slate-500 dark:text-slate-400">
+              {t('dashboard.noExpenses')}
+            </p>
+          ) : (
+            <div className="money-blur">
+              <ResponsiveContainer width="100%" height={250}>
+                <PieChart>
+                  <Pie
+                    data={monthPieData}
+                    dataKey="value"
+                    nameKey="name"
+                    label={pieLabel}
+                    innerRadius="55%"
+                    paddingAngle={2}
+                    stroke="none"
+                  >
+                    {monthPieData.map((entry) => (
+                      <Cell key={entry.name} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(v) => {
+                      const value = Number(v)
+                      return monthTotalExpenses > 0
+                        ? `${formatEur(value)} · ${formatPct(value / monthTotalExpenses)}`
+                        : formatEur(value)
+                    }}
+                    contentStyle={tooltipContentStyle}
+                    labelStyle={tooltipLabelStyle}
+                  />
+                  <Legend wrapperStyle={legendStyle} />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+          )}
         </section>
 
         <div className="lg:col-span-2 space-y-4">
@@ -306,7 +344,7 @@ export function DashboardPage() {
             </h2>
             <div className="money-blur">
               <ResponsiveContainer width="100%" height={250}>
-                <BarChart data={monthlyData} style={{ cursor: 'pointer' }} onClick={handleBarClick}>
+                <BarChart data={barData} style={{ cursor: 'pointer' }} onClick={handleBarClick}>
                   <CartesianGrid strokeDasharray="3 3" stroke={CHART.grid} vertical={false} />
                   <XAxis dataKey="month" tick={chartTick} axisLine={false} tickLine={false} />
                   <YAxis
@@ -324,18 +362,18 @@ export function DashboardPage() {
                   />
                   <Legend wrapperStyle={legendStyle} />
                   <Bar dataKey="income" name={t('averages.income')} radius={[4, 4, 0, 0]}>
-                    {monthlyData.map((entry) => (
+                    {barData.map((entry) => (
                       <Cell
                         key={entry.month}
-                        fill={selectedMonth === entry.month ? CHART.incomeActive : CHART.income}
+                        fill={dashMonth === entry.month ? CHART.incomeActive : CHART.income}
                       />
                     ))}
                   </Bar>
                   <Bar dataKey="expense" name={t('averages.expense')} radius={[4, 4, 0, 0]}>
-                    {monthlyData.map((entry) => (
+                    {barData.map((entry) => (
                       <Cell
                         key={entry.month}
-                        fill={selectedMonth === entry.month ? CHART.expenseActive : CHART.expense}
+                        fill={dashMonth === entry.month ? CHART.expenseActive : CHART.expense}
                       />
                     ))}
                   </Bar>
@@ -344,12 +382,12 @@ export function DashboardPage() {
             </div>
           </section>
 
-          {selectedMonth && (
+          {detailOpen && dashMonth && (
             <section ref={detailRef} className="card p-5">
               <div className="mb-4 flex items-center justify-between">
-                <h2 className="font-semibold tracking-tight">{formatMonth(selectedMonth)}</h2>
+                <h2 className="font-semibold tracking-tight">{formatMonth(dashMonth)}</h2>
                 <button
-                  onClick={() => setSelectedMonth(null)}
+                  onClick={() => setDetailOpen(false)}
                   aria-label={t('dashboard.closeDetail')}
                   className="flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-800 dark:hover:text-slate-300"
                 >
